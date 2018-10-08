@@ -5,9 +5,8 @@ Credits
 Development Lead
 ----------------
 
-* Valentin Metraux <valentin@valentinmetraux.com>
+* Valentin Métraux <valentin.metraux@gmail.com>
 
 Contributors
 ------------
-
-None yet. Why not be the first?
+None yet.
