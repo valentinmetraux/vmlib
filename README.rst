@@ -30,7 +30,7 @@ Geophysical / GIS toolbox
 Features
 --------
 
-* TODO
+* To be defined later
 
 Credits
 -------
