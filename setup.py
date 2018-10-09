@@ -36,7 +36,10 @@ setup(
     include_package_data=True,
     keywords='vmlib',
     name='vmlib',
-    packages=find_packages(include=['vmlib']),
+    packages=[
+        'vmlib',
+        'vmlib.units',
+    ],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
