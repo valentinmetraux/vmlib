@@ -2,6 +2,10 @@
 Change Log
 =======
 
+0.2.1 (2018-10-09)
+------------------
+* Bug patch
+
 0.2.0 (2018-10-08)
 ------------------
 * First release of the units module (tested with full coverage)
