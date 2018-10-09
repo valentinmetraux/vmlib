@@ -39,6 +39,7 @@ setup(
     packages=[
         'vmlib',
         'vmlib.units',
+        'vmlib.survey',
     ],
     setup_requires=setup_requirements,
     test_suite='tests',

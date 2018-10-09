@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from .constants import pi
 
+
 def convert_temperature(val, old_scale="fahrenheit", new_scale="celsius"):
     """
     Convert from a temperatuure scale to another one among Celsius, Kelvin
