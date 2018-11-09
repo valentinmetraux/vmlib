@@ -4,7 +4,7 @@
 
 __author__ = """Valentin Metraux"""
 __email__ = 'valentin@valentinmetraux.com'
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 __license__ = 'MIT'
 __docformat__ = 'reStructuredText'
 
