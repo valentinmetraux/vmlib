@@ -8,8 +8,9 @@ __version__ = '0.2.3'
 __license__ = 'MIT'
 __docformat__ = 'reStructuredText'
 
-__all__ = ["decorators", "dir", "hydrology", "io",
-           "math", "pdf", "plot", "survey", 'tools', "units"]
+
+__all__ = ['decorators', 'dirs', 'hydrology', 'io', 'math', 'pdf',
+           'plot', 'survey', 'tools', 'units']
 
 # Standard libtrary imports
 import logging
@@ -20,7 +21,7 @@ import sys
 # Local imports
 from .decorators import *
 from .custom_exceptions import *
-from . import dir
+from . import dirs
 from . import survey
 from . import units
 from . import tools

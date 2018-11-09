@@ -38,8 +38,10 @@ setup(
     name='vmlib',
     packages=[
         'vmlib',
-        'vmlib.units',
+        'vmlib.dirs',
         'vmlib.survey',
+        'vmlib.tools',
+        'vmlib.units',
     ],
     setup_requires=setup_requirements,
     test_suite='tests',

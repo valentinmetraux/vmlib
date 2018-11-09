@@ -54,7 +54,7 @@ def main():
         log = False
     # Execute
     print('\n')
-    vm.dir.list_directory(folder, rec,
+    vm.dirs.list_directory(folder, rec,
                           ext, wildcard, log, out)
 
 

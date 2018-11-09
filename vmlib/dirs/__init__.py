@@ -2,7 +2,7 @@
 
 """
 =========================
-Directory (mod: 'vmlib.dir')
+Directory (mod: 'vmlib.dirs')
 =========================
 
 Directory function to manipulate files and directories
