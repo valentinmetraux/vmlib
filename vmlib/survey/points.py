@@ -4,6 +4,8 @@
 This modules contains classes and methods related to each individual
 topographical survey points.
 """
+import logging
+from ..custom_exceptions import *
 
 
 class Survey_point(object):
@@ -13,18 +15,6 @@ class Survey_point(object):
 
     Parameters
     ----------
-    project: str
-        Project name
-
-    site: str or int
-        Sitename or number. Is converted to string
-
-    line: str or int
-        Line name. Is converted to string
-
-    method: str
-        Method name ['rx', 'rf', 'ert' 'em', 'grav', 'other']
-
     point_type: str
         Point type ['src', 'rcv', 'electrode', 'em', 'grav', 'other']
 
@@ -54,7 +44,7 @@ class Survey_point(object):
     crs:    str or int
         Coordinate reference system code (EPSG)
 
-    azimtuh:    float or int
+    azimuth:    float or int
         Azimuth of the line at the point's location
 
     offset_inline: float or int
@@ -68,18 +58,40 @@ class Survey_point(object):
 
     note: str
         Any note or remark on the point.
+
+    Methods:
+    --------
+    compute_distance("preplot" or "postplot")
+    compute_offsets()
+    ensure_point_type_coherency()
     """
 
-    def __init__(self, project='', site='', line='', method='', point_type='',
-                   point_id='', status='raw', preplot=(0, 0),
-                   postplot=(0, 0, 0), kp_ref=(0, 0), distance=0,
-                   instrument='', initials='Unknown', crs='', azimuth=0,
-                   offset_inline=0, offset_crossline=0, offset_abd= 0,
-                   note=''):
-        self.project = str(project)
-        self.site = str(site)
-        self.line = str(line)
-        self.method = str(method)
+    def __init__(self, point_type='', point_id='', status='raw',
+                 preplot=(0, 0), postplot=(0, 0, 0), kp_ref=(0, 0), distance=0,
+                 instrument='', initials='Unknown', crs='', azimuth=0,
+                 offset_inline=0, offset_crossline=0, offset_abd=0,
+                 note=''):
+        # Parameter check and instance parameters instanciation
+        if isinstance(project, str):
+            self.project = str(project)
+        else:
+            logging.critical('Type error on project argument')
+            raise TypeError("SCRIPT TERMINATED")
+        if isinstance(site, (str, int)):
+            self.site = str(site)
+        else:
+            logging.critical('Type error on site argument')
+            raise TypeError("SCRIPT TERMINATED")
+        if isinstance(line, (str, int)):
+            self.line = str(line)
+        else:
+            logging.critical('Type error on line argument')
+            raise TypeError("SCRIPT TERMINATED")
+        if method in ['rx', 'rf', 'ert' 'em', 'grav', 'other']:
+            self.method = str(method)
+        else:
+            logging.critical('Method should be in ["rx", "rf", "ert", "em", "grav", "other"]')
+            raise TypeError("SCRIPT TERMINATED")
         self.point_id = str(point_id)
         self.point_type = str(point_type)
         self.status = str(status)
@@ -88,18 +100,24 @@ class Survey_point(object):
         self.kp_ref = [float(x) for x in kp_ref]
         self.distance = 0
         self.instrument = str(instrument)
-        self.surveyor_initials = str(initials)
+        if isinstance(note, str):
+            self.surveyor_initials = str(initials)
+        else:
+            logging.critical('Type error on initials argument')
+            raise TypeError("SCRIPT TERMINATED")
         self.crs = str(crs)
         self.azimuth = 0
         self.offset_inline = 0
         self.offset_crossline = 0
         self.offset_abs = 0
-        self.note = str(note)
-
+        if isinstance(note, str):
+            self.note = str(note)
+        else:
+            logging.critical('Type error on note argument')
+            raise TypeError("SCRIPT TERMINATED")
 
     def __str__(self):
         return f'Site {self.site} - Line {self.line} - {self.point_type.upper()} - Point {self.point_id} - {self.status.upper()}'
-
 
     def __repr__(self):
         return f'Site {self.site} - Line {self.line} - {self.point_type.upper()} - Point {self.point_id} - {self.status.upper()} - {self.note}'

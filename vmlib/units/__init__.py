@@ -29,7 +29,7 @@ convert_velocity(val, old_scale, new_scale)
 
 """
 
-__all__ = ["constants", "converter"]
+__all__ = ['constants', 'converter']
 
 from .constants import *
 from .converter import *
