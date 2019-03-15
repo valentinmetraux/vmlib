@@ -52,7 +52,7 @@ def timer(func):
         value = func(*args, **kwargs)
         end_time = time.perf_counter()
         run_time = end_time - start_time
-        logging.debug(f"{func.__name__!r} has run in {run_time:.3f} secs")
+        logging.info(f"{func.__name__!r} has run in {run_time:.3f} secs")
         return value
     return wrapper_timer
 

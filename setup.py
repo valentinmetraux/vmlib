@@ -12,7 +12,14 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    "click>=6.0"
+    'click>=6.0',
+    'matplotlib',
+    'numpy',
+    'pandas',
+    'segyio',
+    'scikit-learn',
+    'scipy',
+    'squarify',
 ]
 
 setup_requirements = ['pytest-runner', ]
@@ -39,9 +46,22 @@ setup(
     packages=[
         'vmlib',
         'vmlib.dirs',
+        'vmlib.em',
+        'vmlib.ert',
+        'vmlib.gis',
+        'vmlib.hydrology',
+        'vmlib.io',
+        'vmlib.math',
+        'vmlib.pdf',
+        'vmlib.plot'
+        'vmlib.project',
+        'vmlib.ressources',
+        'vmlib.seismic',
+        'vmlib.stats',
         'vmlib.survey',
         'vmlib.tools',
         'vmlib.units',
+        'vmlib.utils',
     ],
     setup_requires=setup_requirements,
     test_suite='tests',

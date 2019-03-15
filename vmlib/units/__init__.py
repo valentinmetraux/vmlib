@@ -4,7 +4,6 @@
 =========================
 Constants (mod: 'vmlib.units')
 =========================
-
 Physical and mathematical constants and units
 
 Mathematical constants

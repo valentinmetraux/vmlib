@@ -9,8 +9,9 @@ __license__ = 'MIT'
 __docformat__ = 'reStructuredText'
 
 
-__all__ = ['decorators', 'dirs', 'hydrology', 'io', 'math', 'pdf',
-           'plot', 'survey', 'tools', 'units']
+__all__ = ['decorators', 'dirs', 'em', 'ert', 'gis', 'hydrology', 'io',
+           'math', 'pdf', 'plot', 'project', 'seismic', 'stats', 'survey',
+           'tools', 'units', 'utils']
 
 # Standard libtrary imports
 import logging
@@ -22,15 +23,27 @@ import sys
 from .decorators import *
 from .custom_exceptions import *
 from . import dirs
+from . import em
+from . import ert
+from . import gis
+from . import hydrology
+from . import io
+from . import math
+from . import pdf
+from . import plot
+from . import project
+from . import seismic
+from . import stats
 from . import survey
-from . import units
 from . import tools
+from . import units
+from . import utils
 
 
 # Set library-wide shared parameters
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(levelname)s - %(asctime)s - %(message)s',
     datefmt='%H:%M:%S'
-    )
-sys.tracebacklimit = 0
+)
+sys.tracebacklimit = 3
