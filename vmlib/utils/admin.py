@@ -133,42 +133,16 @@ def monthly_summary(month, log, daily, activities):
 def export_month_plot(month, log, daily, activities, params):
     # Prepare Weekly data
     df = log.set_index('start')
-    wk = df.groupby([pd.Grouper(freq='W'),
-                    'type']).sum()['duration'].unstack().fillna(0)
-    wk['client'] = pd.to_timedelta(wk['client']).dt.total_seconds()
-    wk['intern'] = pd.to_timedelta(wk['intern']).dt.total_seconds()
-    wk['total'] = wk['client'] + wk['intern']
-    wk['per_client'] = 100*(wk['client']/wk['total'])
-    wk['per_intern'] = 100-wk['per_client']
+    wk = _prepare_weekly_data(df)
     # Prepare monthly data
-    mth = df.groupby([pd.Grouper(freq='M'),
-                     'main_cat']).sum()['duration'].unstack().fillna(0)
-    columns = mth.columns
-    for col in columns:
-        mth[col] = pd.to_timedelta(mth[col]).dt.total_seconds()
-    mth['tot'] = mth.sum(axis=1)
-    for col in columns:
-        mth[col] = round(100*mth[col]/mth['tot'], 1)
-    mth.drop(['tot'], axis=1, inplace=True)
+    mth = _prepare_monthly_data(df)
     # Prepare month data
-    mt = df.groupby([pd.Grouper(freq='M'),
-                     'cat']).sum()['duration'].unstack().fillna(0)
-    columns = mt.columns
-    for col in columns:
-        mt[col] = pd.to_timedelta(mt[col]).dt.total_seconds()
-    mt['tot'] = mt.sum(axis=1)
-    for col in columns:
-        mt[col] = round(100*mt[col]/mt['tot'], 1)
-    mt.drop(['tot'], axis=1, inplace=True)
-    # Get data for this month
-    mt.rename(index=lambda x: x.strftime('%Y-%m'), inplace=True)
-    monthly_data = mt[mt.index == month].T.unstack().reset_index()
+    monthly_data = _prepare_month_data(df, month)
     # Get labels and colors from activities
     for index, row in monthly_data.iterrows():
         sel = activities[activities['cat'] == row['cat']].reset_index()
         label = sel.loc[0, 'label']
         color = sel.loc[0, 'color']
-
         monthly_data.loc[index, 'label'] = label
         monthly_data.loc[index, 'color'] = color
     # Prepare figure and initialize styles
@@ -235,14 +209,68 @@ def export_month_plot(month, log, daily, activities, params):
     labels = [f'{labels[i]}\n{sizes[i]}%' for i in range(len(labels))]
     colors = monthly_data['color'].tolist()
     squarify.plot(ax=ax5, sizes=sizes, label=labels,
-                  color=colors, alpha=.8, text_kwargs={'fontsize':8})
-    ax5.axis('off')
+                  color=colors, alpha=.8, text_kwargs={'fontsize': 8})
+    ax5.tick_params(axis='x', which='both', bottom=False,
+                    top=False, labelbottom=False)
+    ax5.tick_params(axis='y', which='both', right=False,
+                    left=False, labelleft=False)
+    for pos in ['right', 'top', 'bottom', 'left']:
+        ax5.spines[pos].set_visible(True)
     # Export
     out_path = pathlib.Path(params['out_folder'], f'{month}.jpg')
     fig.savefig(out_path)
     plt.close(fig)
     vm.utils.print.info(f'Export monthly plot - {month}', 1)
     return out_path
+
+
+def export_pdf():
+    from pkg_resources import resource_filename as resource
+    # Get the data file:
+
+    data = pathlib.Path(resource('vmlib.ressources', 'test.txt'))
+    print(data)
+    with open(data) as f:
+        print(f.readlines())
+
+def _prepare_month_data(df, month):
+    mt = df.groupby([pd.Grouper(freq='M'),
+                     'cat']).sum()['duration'].unstack().fillna(0)
+    columns = mt.columns
+    for col in columns:
+        mt[col] = pd.to_timedelta(mt[col]).dt.total_seconds()
+    mt['tot'] = mt.sum(axis=1)
+    for col in columns:
+        mt[col] = round(100*mt[col]/mt['tot'], 1)
+    mt.drop(['tot'], axis=1, inplace=True)
+    # Get data for this month
+    mt.rename(index=lambda x: x.strftime('%Y-%m'), inplace=True)
+    monthly_data = mt[mt.index == month].T.unstack().reset_index()
+    return monthly_data
+
+
+def _prepare_weekly_data(df):
+    wk = df.groupby([pd.Grouper(freq='W'),
+                    'type']).sum()['duration'].unstack().fillna(0)
+    wk['client'] = pd.to_timedelta(wk['client']).dt.total_seconds()
+    wk['intern'] = pd.to_timedelta(wk['intern']).dt.total_seconds()
+    wk['total'] = wk['client'] + wk['intern']
+    wk['per_client'] = 100*(wk['client']/wk['total'])
+    wk['per_intern'] = 100-wk['per_client']
+    return wk
+
+
+def _prepare_monthly_data(df):
+    mth = df.groupby([pd.Grouper(freq='M'),
+                     'main_cat']).sum()['duration'].unstack().fillna(0)
+    columns = mth.columns
+    for col in columns:
+        mth[col] = pd.to_timedelta(mth[col]).dt.total_seconds()
+    mth['tot'] = mth.sum(axis=1)
+    for col in columns:
+        mth[col] = round(100*mth[col]/mth['tot'], 1)
+    mth.drop(['tot'], axis=1, inplace=True)
+    return mth
 
 
 def _expected(row, par):
@@ -448,11 +476,17 @@ def _define_type(row):
 
 
 def _get_cat(row, act):
-    return str(act[act['abbrev'] == row['Activity']].cat.values[0])
+    try:
+        return str(act[act['abbrev'] == row['Activity']].cat.values[0])
+    except IndexError:
+        raise ValueError('The category is invalid.')
 
 
 def _get_main_cat(row, act):
-    return str(act[act['abbrev'] == row['Activity']].main_cat.values[0])
+    try:
+        return str(act[act['abbrev'] == row['Activity']].main_cat.values[0])
+    except IndexError:
+        raise ValueError('The main category is invalid.')
 
 
 def _split_cat(df, act):
