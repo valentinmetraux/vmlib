@@ -25,7 +25,7 @@ from .hist import distribution
 from .lines import generic, fill
 from .scatter import xy_map
 from .seis import basemap_line, elevation, offset_cdp_fold, amplitude_offset
-from .seis import stacking, fold, cdp_spacing
+from .seis import stacking, fold, cdp_spacing, rms_map, short_gathers
 
 
 from .styles import set_plot_styles

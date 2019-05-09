@@ -1,6 +1,7 @@
 import math
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import numpy as np
 from . styles import set_plot_styles
 from ..plot import hist
 
@@ -102,7 +103,7 @@ def amplitude_offset(file, outfile):
     ax = fig.add_subplot(1, 1, 1)
     # Plot variables
     x = file.traces.data['offset']
-    y = file.traces.data['max'] - file.traces.data['min']
+    y = file.traces.data['amplitude']
     ax.scatter(x, y, s=1)
     ax.set_ylim([0, max(y)])
     # Tuning labels and titles
@@ -185,3 +186,75 @@ def cdp_spacing(file, outfile):
                       xlabel='CDP spacing [m]',
                       ylabel='Probability density',
                       out=outfile)
+
+
+def rms_map(file, outfile):
+    # Reset styles and apply vmlib ones
+    plt.style.use('ggplot')
+    set_plot_styles()
+    # Create figure
+    fig, axs = plt.subplots(3, 1, figsize=(15, 20))
+    # Plot heat map
+    x, y = [], []
+    rms, rms_top, rms_bot = [], [], []
+    for index, row in file.traces.data.iterrows():
+        x.append(row['rcv_station'])
+        y.append(row['src_station'])
+        rms.append(row['rms'])
+        rms_top.append(row['rms_top'])
+        rms_bot.append(row['rms_bkg'])
+    # Plot main rms
+    cmap = mpl.cm.get_cmap('jet')
+    axs[0].scatter(x, y, c=rms, cmap=cmap, linewidths=0,
+                   norm=mpl.colors.LogNorm())
+    axs[1].scatter(x, y, c=rms_top, cmap=cmap, linewidths=0,
+                   norm=mpl.colors.LogNorm())
+    axs[2].scatter(x, y, c=rms_bot, cmap=cmap, linewidths=0,
+                   norm=mpl.colors.LogNorm())
+    # Tuning labels and titles
+    for ax in axs:
+        ax.set_xlabel('RCV Station')
+        ax.set_ylabel('SRC Station')
+        ax.set_aspect(1)
+        ax.set_xlim(min(x),max(x))
+        ax.set_ylim(min(y),max(y))
+    axs[0].set_title('Whole trace')
+    axs[1].set_title('Top half of each trace')
+    axs[2].set_title('Bottom half of each trace')
+    fig.suptitle(f"RMS Maps - {file.attributes['line']}")
+    # Save
+    fig.savefig(outfile)
+    plt.close(fig)
+
+
+def short_gathers(file, shot, out_folder, par):
+    # Reset styles and apply vmlib ones
+    plt.style.use('ggplot')
+    set_plot_styles()
+    # Create figure
+    fig = plt.figure(figsize=(14, 8))
+    ax = fig.add_subplot(1, 1, 1)
+
+
+    print(shot)
+
+    # Display shot station
+    vm = np.percentile(shot['data'], 80)
+
+    ax.imshow(shot['data'].T, cmap="Greys", vmin=-vm,
+              vmax=vm, aspect='auto')
+
+
+
+    # Display offset curve on top
+
+
+    # Axes & Co
+    ax.set_xlabel('RCV Stations')
+    ax.set_ylabel('Samples')
+    ax.set_title(f"{shot['ffid']} - {shot['src']}")
+    # Save
+    outfile = f"{out_folder}_{shot['src']}.jpg"
+    fig.savefig(outfile)
+    plt.close(fig)
+

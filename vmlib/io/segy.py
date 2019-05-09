@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+import numpy as np
 import pandas as pd
 import segyio
 import vmlib as vm
@@ -20,14 +21,10 @@ class Segy():
 
     def load(self, filename, data=True):
         with segyio.open(filename, 'r', ignore_geometry=True) as f:
-            f.mmap()
             # Load bin headers
             self.bin_header = f.bin
             # Load text headers
             self.text_header = self.parse_text_header(f)
-            # Load data
-            if data:
-                self.data = f.trace.raw[:]
             # Load stats
             self.stats = {
                 'filename': filename,
@@ -84,7 +81,7 @@ class Segy():
         for k, v in self.text_header.items():
             f.write(f'{k} - {v}\n')
         f.close()
-        vm.utils.print.info('Text header', 2)
+        vm.utils.print.info('Text header', 3)
 
     def export_bin_header(self, output='root'):
         # Resolve output filename
@@ -101,7 +98,7 @@ class Segy():
         for k, v in self.bin_header.items():
             f.write(f'{k} - {v}\n')
         f.close()
-        vm.utils.print.info('Bin header', 2)
+        vm.utils.print.info('Bin header', 3)
 
     def export_trace_header(self, output='root'):
         # Resolve output filename
@@ -115,7 +112,7 @@ class Segy():
         outfile = out.joinpath(f'{filename.stem}_trace_header.txt')
         # Write to file
         self.trace_header.to_csv(outfile)
-        vm.utils.print.info('Trace header', 2)
+        vm.utils.print.info('Trace header', 3   )
 
 
 class Seis_navmerge(Segy):
@@ -179,10 +176,11 @@ class Seis_navmerge(Segy):
         df.index.name = 'rcv_station'
         # Set as instance variable
         self.receivers = vm.seismic.rcv.RCV_line(df)
-        vm.utils.print.info('RCV extracted', 2)
+        vm.utils.print.info('RCV extracted', 3)
         return None
 
-    def get_shots(self, src_between_rcv=True, rcv_header='CROSSLINE_3D'):
+    def get_shots(self, src_between_rcv=True, rcv_header='CROSSLINE_3D',
+                  src_header='ShotPoint'):
         # Group on FFID
         groupings = {'SourceSurfaceElevation': 'mean',
                      'ElevationScalar': 'mean',
@@ -190,7 +188,7 @@ class Seis_navmerge(Segy):
                      'SourceY': 'mean',
                      'SourceGroupScalar': 'mean',
                      'EnergySourcePoint': 'mean',
-                     'ShotPoint': 'mean',
+                     src_header: 'mean',
                      'YearDataRecorded': 'mean',
                      'DayOfYear': 'mean',
                      'HourOfDay': 'mean',
@@ -208,7 +206,7 @@ class Seis_navmerge(Segy):
                                 'MinuteOfHour': 'minute',
                                 'SecondOfMinute': 'second',
                                 'EnergySourcePoint': 'src_inline',
-                                'ShotPoint': 'src_station'
+                                src_header: 'src_station'
                                 })
         df['date'] = pd.to_datetime(df['year'],
                                     format='%Y') + pd.to_timedelta(df['doy']-1,
@@ -234,14 +232,15 @@ class Seis_navmerge(Segy):
         df.index.name = 'ffid'
         # Set as instance variable
         self.shots = vm.seismic.src.SRC_line(df)
-        vm.utils.print.info('SRC extracted', 2)
+        vm.utils.print.info('SRC extracted', 3)
         return None
 
-    def get_midpoints(self, src_between_rcv=True, rcv_header='CROSSLINE_3D'):
+    def get_midpoints(self, src_between_rcv=True, rcv_header='CROSSLINE_3D',
+                      src_header='ShotPoint'):
         # Create blank dataframe with index = trace sequence number
         df = pd.DataFrame(index=self.trace_header['TRACE_SEQUENCE_LINE'])
         # Get cdp id, x, y, offset
-        df['src_station'] = self.trace_header['ShotPoint']
+        df['src_station'] = self.trace_header[src_header]
         df['rcv_station'] = self.trace_header[rcv_header]
         if src_between_rcv:
             df['src_station'] += 0.5
@@ -260,19 +259,21 @@ class Seis_navmerge(Segy):
         # Compute CDP Fold
 
         def _get_fold(row, df):
-            return(df['cdp_num'] == row['cdp_num']).sum()
+            return np.in1d(df['cdp_num'].reset_index(drop=True),
+                           row['cdp_num']).sum()
 
         df['fold'] = df.apply(lambda row: _get_fold(row, df), axis=1)
         # Set as instance variable
         self.midpoints = vm.seismic.cdp.CDP_line(df)
-        vm.utils.print.info('Midpoints extracted', 2)
+        vm.utils.print.info('Midpoints extracted', 3)
         return None
 
-    def get_traces(self, header='CROSSLINE_3D', src_between_rcv=True):
+    def get_traces(self, header='CROSSLINE_3D', src_header='ShotPoint',
+                   src_between_rcv=True):
         # Create blank dataframe with index = trace sequence number idem cdp
         df = pd.DataFrame(index=self.trace_header['TRACE_SEQUENCE_LINE'])
         # Get src and rcv id, channel number
-        df['src_station'] = self.trace_header['ShotPoint']
+        df['src_station'] = self.trace_header[src_header]
         df['rcv_station'] = self.trace_header[header]
         df['channel'] = self.trace_header['TraceNumber']
         if src_between_rcv:
@@ -284,16 +285,15 @@ class Seis_navmerge(Segy):
         df = df[df['trace_id_code'] == 1] # Keep only valid seismic traces
         df.drop(['trace_id_code'], axis=1, inplace=True)
         # Get trace data
-        for ix, trace in enumerate(self.data):  # Loop on each trace
-            df.loc[ix+1, 'min'] = trace.min()
-            df.loc[ix+1, 'max'] = trace.max()
-            df.loc[ix+1, 'mean'] = trace.mean()
-            df.loc[ix+1, 'rms'] = trace.std()
-            df.loc[ix+1, 'rms_top'] = trace[:int(len(trace)/2)].std()
-            df.loc[ix+1, 'rms_bkg'] = trace[int(len(trace)/2):-1].std()
+        with segyio.open(self.stats['filename'], ignore_geometry=True) as f:
+            for ix, trace in enumerate(f.trace):
+                df.loc[ix+1, 'amplitude'] = trace.max() - trace.min()
+                df.loc[ix+1, 'rms'] = trace.std()
+                df.loc[ix+1, 'rms_top'] = trace[:int(len(trace)/2)].std()
+                df.loc[ix+1, 'rms_bkg'] = trace[int(len(trace)/2):-1].std()
         # Set as instance variable
         self.traces = vm.seismic.traces.Line(df)
-        vm.utils.print.info('Traces extracted', 2)
+        vm.utils.print.info('Traces extracted', 3)
         return None
 
     def get_attributes(self, epsg):
@@ -311,22 +311,27 @@ class Seis_navmerge(Segy):
             'line_num': line_num,
             'epsg': epsg,
         }
-        vm.utils.print.info('Attributes extracted', 2)
+
+        vm.utils.print.info('Attributes extracted', 3)
         return None
 
-    def generate_plots(self, output='root', src=True, rcv=True,
-                       cdp=True, midpoints=True):
-        vm.seismic.navmerge.basemap(self, output, src, rcv, cdp, midpoints)
-        vm.seismic.navmerge.elevation(self, output)
-        vm.seismic.navmerge.offset_cdp_fold(self, output)
-        vm.seismic.navmerge.stacking(self, output)
-        vm.seismic.navmerge.fold(self, output)
-        vm.seismic.navmerge.cdp_spacing(self, output)
+    def generate_plots(self, par):
+        vm.seismic.navmerge.basemap(self, par['output_type'], par['plot_src'],
+                                    par['plot_rcv'], par['plot_cdp'],
+                                    par['plot_midpoints'])
+        vm.seismic.navmerge.elevation(self, par['output_type'])
+        vm.seismic.navmerge.offset_cdp_fold(self, par['output_type'])
+        vm.seismic.navmerge.stacking(self, par['output_type'])
+        vm.seismic.navmerge.fold(self, par['output_type'])
+        vm.seismic.navmerge.cdp_spacing(self, par['output_type'])
         if hasattr(self, 'traces'):
-            vm.seismic.navmerge.amplitude_offset(self, output)
-            # RMS Maps
-            # Short offsets Shot gathers with shot station
-            # Spectra (average, short-long offsets)
+            vm.seismic.navmerge.amplitude_offset(self, par['output_type'])
+            vm.seismic.navmerge.rms_map(self, par['output_type'])
+            vm.seismic.navmerge.gathers_short(self, par)
+
+
+            # Spectra (average, short & long offsets)
+            # Export shots, offset classes, octave panels & CDP
 
 
 class Seis_shot(Segy):
@@ -347,7 +352,7 @@ def import_section(filename, data=True):
     return segy
 
 def import_navmerge(filename, data=False, rcv_header='CROSSLINE_3D',
-                    src_between_rcv=True, epsg='2056'):
+                    src_header='ShotPoint', src_between_rcv=True, epsg='2056'):
     navmerge = Seis_navmerge()
     navmerge.load(filename, data)
     # Get line attributes from headers
@@ -355,9 +360,9 @@ def import_navmerge(filename, data=False, rcv_header='CROSSLINE_3D',
     # Extract RCV, SRC and CDP
     navmerge.clean_trace_headers()
     navmerge.get_receivers(rcv_header)
-    navmerge.get_shots(src_between_rcv, rcv_header)
-    navmerge.get_midpoints(src_between_rcv, rcv_header)
+    navmerge.get_shots(src_between_rcv, rcv_header, src_header)
+    navmerge.get_midpoints(src_between_rcv, rcv_header, src_header)
     # Extract trace data if data extraction is validated
     if data:
-        navmerge.get_traces(rcv_header, src_between_rcv)
+        navmerge.get_traces(rcv_header, src_header, src_between_rcv)
     return navmerge

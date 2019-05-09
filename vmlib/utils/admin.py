@@ -224,14 +224,32 @@ def export_month_plot(month, log, daily, activities, params):
     return out_path
 
 
-def export_pdf():
-    from pkg_resources import resource_filename as resource
-    # Get the data file:
+def export_pdf(outfile, author, results):
+    # Create template instance
+    doc = vm.pdf.templates.Geo2x_a4(outfile)
+    # Create Title page
+    doc.create_title_page(title='Geo2X - Log',
+                          subtitle='Décomptes mensuels',
+                          img=None,
+                          author=author)
+    # Add content
+    months = results.keys()
+    for m in months:
+        doc.create_text(m, 'h1')
+        # DF
+        doc.create_text('Daily log', 'h2')
+        doc.create_table(results[m]['df'], 'log')
+        # Plot
+        doc.create_page_break()
+        doc.create_text('Monthly activity distribution', 'h2')
+        doc.create_spacer(10)
+        doc.create_image(results[m]['img'], align='CENTER', width=18,
+                         height=9, caption=None)
+        doc.create_page_break()
+    # Save document
+    doc.save()
+    vm.utils.print.info(f'Export report - {doc.outfile}', 1)
 
-    data = pathlib.Path(resource('vmlib.ressources', 'test.txt'))
-    print(data)
-    with open(data) as f:
-        print(f.readlines())
 
 def _prepare_month_data(df, month):
     mt = df.groupby([pd.Grouper(freq='M'),

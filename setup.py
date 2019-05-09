@@ -43,11 +43,11 @@ setup(
     keywords='vmlib',
     name='vmlib',
     packages=find_packages(),
-    package_data={'': ['*.jpg', '*.txt']},
+    package_data={'': ['*.jpg', '*.txt', '*.png']},
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/valentinmetraux/vmlib',
-    version='0.3.1',
+    version='0.3.2',
     zip_safe=False,
 )
