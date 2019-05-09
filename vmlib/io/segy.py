@@ -331,7 +331,7 @@ class Seis_navmerge(Segy):
 
 
             # Spectra (average, short & long offsets)
-            # Export shots, offset classes, octave panels & CDP
+            # Export shots, offset classes
 
 
 class Seis_shot(Segy):

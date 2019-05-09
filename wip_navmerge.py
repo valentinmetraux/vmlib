@@ -2,13 +2,13 @@ import pathlib
 import vmlib as vm
 
 # PARAMETERS
-params = {'root': pathlib.Path(r'C:\Users\Valentin\Desktop\SEIS_QC\Gathers'),
+params = {'root': pathlib.Path(r'C:\Users\Valentin\Desktop\SEIS_QC\Nav-merge'),
           'extension': '*.SEGY',
           'output_type': 'root',
           'epsg': '2056',
           'load_traces': True,
-          'rcv_header': 'ShotPoint',
-          'src_header': 'CROSSLINE_3D',
+          'rcv_header': 'CROSSLINE_3D',
+          'src_header': 'ShotPoint',
           'src_geom': True,
           'plot_src': True,
           'plot_rcv': True,
@@ -16,8 +16,8 @@ params = {'root': pathlib.Path(r'C:\Users\Valentin\Desktop\SEIS_QC\Gathers'),
           'plot_midpoints': True,
           'export_headers': True,
           'export_report': True,
-          'short_offset_lim': 50,  # m
-          'short_offset_cut': 100,  # ms
+          'short_offset_lim': 250,  # m
+          'short_offset_cut': 300,  # ms
           }
 
 

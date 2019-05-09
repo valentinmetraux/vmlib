@@ -16,7 +16,7 @@ def _get_outfilename(file, output_type, folder, suffix):
 def _get_outfolder(file, folder):
     out = file.stats['filename'].parent.joinpath(folder)
     out.mkdir(parents=True, exist_ok=True)
-    return out.joinpath(folder)
+    return out
 
 
 def basemap(file, output='root', src=True, rcv=True, cdp=True, midpoints=True):
@@ -79,49 +79,26 @@ def gathers_short(file, par):
     # General parameters
     out_folder = _get_outfolder(file, 'Shot Gathers')
     twt = [t for t in file.stats['twt'] if t <= par['short_offset_cut']]
+    # Get list of all FFIDs and create dict
+    ffids = file.trace_header['FieldRecord'].unique()
+    shots = {k:{'src': 0, 'data': [], 'offsets': [], 'rcvs': [], 'twt': twt} for k in ffids}
+    # Open file and loop on each trace
     with segyio.open(file.stats['filename'], ignore_geometry=True) as f:
-        # Get FFID for first trace and initialize shot dict
-        shot = {'ffid': file.trace_header.loc[1, 'FieldRecord'],
-                'src': 0,
-                'data': [],
-                'offsets': [],
-                'rcvs': [],
-                'twt': twt,
-                }
-        # Loop on each traces in the file
         for ix, trace in enumerate(f.trace):
-            # Get trace relevant infos
-            tr_ffid = file.trace_header.loc[ix + 1, 'FieldRecord']
-            off = file.traces.data.loc[ix + 1, 'offset']
-            src = file.traces.data.loc[ix+1, 'src_station']
-            rcv = file.traces.data.loc[ix+1, 'rcv_station']
-            # Check if same shots than previous tr and clear long offsets
-            if tr_ffid == shot['ffid'] and abs(off) <= par['short_offset_lim']:
-                # Store data
-                shot['ffid'] = tr_ffid
-                shot['src'] = src
-                shot['offsets'].append(off)
-                shot['rcvs'].append(rcv)
-                shot['data'].append(trace[:len(twt)])
-                # Pass FFID to next iteration
-                ffid = tr_ffid
-            else:
-                print(shot)
+            off = file.traces.data.loc[ix+1, 'offset']
+            if abs(off) <= par['short_offset_lim']:
+                tr_ffid = file.trace_header.loc[ix + 1, 'FieldRecord']
+                src = file.traces.data.loc[ix+1, 'src_station']
+                rcv = file.traces.data.loc[ix+1, 'rcv_station']
+                shots[tr_ffid]['src'] = src
+                shots[tr_ffid]['data'].append(trace[:len(twt)].copy())
+                shots[tr_ffid]['offsets'].append(off)
+                shots[tr_ffid]['rcvs'].append(rcv)
+    # Format to np.array
+    for ffid in shots.keys():
+        shots[ffid]['data'] = np.stack(t for t in shots[ffid]['data'])
+    # Send to plotting
+    vm.plot.seis.short_gathers(file, shots, out_folder, par)
 
-                # Format data to np array
-                data = np.stack(t for t in shot['data'])
-                shot['data'] = data
-                # Plot (forward shot dict along with params)
-                vm.plot.seis.short_gathers(file, shot, out_folder, par)
-                # Switch to next shot and empty dict
-                ffid = trace_ffid
-                shot = {'ffid': ffid,
-                        'src': 0,
-                        'data': [],
-                        'offsets': [],
-                        'rcvs': [],
-                        }
-        # Plot last gather
-       # vm.plot.seis.short_gathers(file, shot, out_folder, par)
     vm.utils.print.info('Gathers files created', 3)
     return out_folder

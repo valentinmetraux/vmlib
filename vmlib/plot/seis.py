@@ -1,6 +1,7 @@
 import math
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.gridspec as gridspec
 import numpy as np
 from . styles import set_plot_styles
 from ..plot import hist
@@ -227,34 +228,46 @@ def rms_map(file, outfile):
     plt.close(fig)
 
 
-def short_gathers(file, shot, out_folder, par):
+def short_gathers(file, shots, out_folder, par):
     # Reset styles and apply vmlib ones
     plt.style.use('ggplot')
     set_plot_styles()
-    # Create figure
-    fig = plt.figure(figsize=(14, 8))
-    ax = fig.add_subplot(1, 1, 1)
+    for ffid in shots.keys():
+        shot = shots[ffid]
+        # Create figure
+        fig = plt.figure(figsize=(14, 8))
+        gs = gridspec.GridSpec(4,4)
+        ax = fig.add_subplot(gs[1::, :])
+        ax2 = fig.add_subplot(gs[0, :])
+        # Display seismic shot
+        extent = [shot['rcvs'][0], shot['rcvs'][-1],
+                  shot['twt'][-1], shot['twt'][0]]
+        img = shot['data'].T
+        img = img / img.max(axis=0)
+        vm = np.percentile(img, 98)
+        ax.imshow(img, cmap="Greys", vmin=-vm, vmax=vm, extent=extent,
+                  aspect='auto')
+        # Display shot position
+        ax.axvline(shot['src'], color='r')
+        # Adapt ticks
+        ax.ticklabel_format(useOffset=False)
+        ax2.ticklabel_format(useOffset=False)
+        # Display offset curve on top
+        ax2.plot(shot['rcvs'], [abs(x) for x in shot['offsets']])
+        # Axes & Co
+        ax.set_xlabel('RCV Stations')
+        ax.set_ylabel('Samples')
+        ax2.set_ylabel('Offsets [m]')
+        ax2.set_xticks([])
+        ax2.spines['bottom'].set_visible(False)
+        ax2.set_xlim(min(shot['rcvs'])-0.5, max(shot['rcvs'])+0.5)
+        ax2.set_ylim(0, max(shot['offsets']))
+        fig.suptitle(f"FFID {ffid} - Station {shot['src']}")
+        ax.xaxis.grid(False)
+        ax.yaxis.grid(False)
+        # Save
+        outfile = f"{out_folder}\SRC_{ffid}_short_offsets.jpg"
+        fig.savefig(outfile)
+        plt.close(fig)
 
-
-    print(shot)
-
-    # Display shot station
-    vm = np.percentile(shot['data'], 80)
-
-    ax.imshow(shot['data'].T, cmap="Greys", vmin=-vm,
-              vmax=vm, aspect='auto')
-
-
-
-    # Display offset curve on top
-
-
-    # Axes & Co
-    ax.set_xlabel('RCV Stations')
-    ax.set_ylabel('Samples')
-    ax.set_title(f"{shot['ffid']} - {shot['src']}")
-    # Save
-    outfile = f"{out_folder}_{shot['src']}.jpg"
-    fig.savefig(outfile)
-    plt.close(fig)
 
