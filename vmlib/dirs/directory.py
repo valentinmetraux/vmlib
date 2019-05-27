@@ -66,11 +66,11 @@ def list_directory(folder=pathlib.Path.cwd(),
         for name in files:
             # filter wildcard
             if wildcard in name and extension in name:
-                if recurse == False:
+                if not recurse:
                     if pathlib.Path(ra) == root:
                         path = pathlib.Path(ra, name)
                         file_list.append(path)
-                elif recurse == True:
+                elif recurse:
                     path = pathlib.Path(ra, name)
                     file_list.append(path)
     # Prepare output string
@@ -90,9 +90,8 @@ def list_directory(folder=pathlib.Path.cwd(),
     if out_folder:
         f = open(pathlib.Path(out_folder, 'File_listing.txt'), 'w')
         f.write(header)
-        f.write(40*'-'+ '\n\n')
+        f.write(40*'-' + '\n\n')
         for item in file_list:
             f.write(str(item)+'\n')
     logging.info('END - File listing extraction')
     return file_list
-

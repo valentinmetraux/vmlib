@@ -10,12 +10,13 @@ __docformat__ = 'reStructuredText'
 
 
 __all__ = ['decorators', 'dirs', 'em', 'ert', 'gis', 'hydrology', 'io',
-           'math', 'pdf', 'plot', 'project', 'seismic', 'stats', 'survey',
-           'tools', 'units', 'utils']
+           'math', 'pdf', 'plot', 'project', 'seis', 'stats', 'survey',
+           'units', 'utils']
 
 # Standard libtrary imports
 import logging
 import sys
+import warnings
 
 # Third party imports
 
@@ -32,10 +33,9 @@ from . import math
 from . import pdf
 from . import plot
 from . import project
-from . import seismic
+from . import seis
 from . import stats
 from . import survey
-from . import tools
 from . import units
 from . import utils
 
@@ -47,3 +47,5 @@ logging.basicConfig(
     datefmt='%H:%M:%S'
 )
 sys.tracebacklimit = 3
+warnings.filterwarnings('ignore', category=RuntimeWarning)
+warnings.filterwarnings('ignore', category=FutureWarning)
